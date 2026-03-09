@@ -1,7 +1,6 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseEther } from "viem";
 import { BonsaiVaultABI } from "@/lib/abi";
 import { VAULT_ADDRESS } from "@/lib/contracts";
 
@@ -57,13 +56,13 @@ export function useMintVault() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const mint = (vaultId: number, amount: number, pricePerUnit: number) => {
+  const mint = (vaultId: number, amount: number, mintPriceWei: bigint) => {
     writeContract({
       address: VAULT_ADDRESS,
       abi: BonsaiVaultABI,
       functionName: "mint",
       args: [BigInt(vaultId), BigInt(amount)],
-      value: parseEther((pricePerUnit * amount).toFixed(18)),
+      value: mintPriceWei * BigInt(amount),
     });
   };
 

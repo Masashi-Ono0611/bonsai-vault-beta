@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useMintVault, useVaultInfo, useCurrentSupply, useVaultBalance, useRedeemableAt } from "@/hooks/useVault";
+import { parseEther } from "viem";
 import { MINT_PRICE_ETH, MAX_SUPPLY, VAULT_ADDRESS } from "@/lib/contracts";
 
 const BASESCAN_TX = "https://sepolia.basescan.org/tx/";
@@ -110,7 +111,7 @@ export function MintPanel() {
           </p>
         ) : (
           <button
-            onClick={() => mint(0, amount, MINT_PRICE_ETH)}
+            onClick={() => mint(0, amount, vaultInfo ? (vaultInfo[2] as bigint) : parseEther("0.05"))}
             disabled={isPending || isConfirming || !isContractDeployed || remaining <= 0}
             className="w-full rounded-xl bg-vault-accent py-3 text-base font-bold text-vault-bg transition-all hover:bg-vault-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
