@@ -46,8 +46,13 @@ test.describe("Mint Page", () => {
     await expect(page.getByText("40.798").first()).toBeVisible();
   });
 
-  test("should show max supply of 1000", async ({ page }) => {
-    await expect(page.getByText("/ 1000")).toBeVisible();
+  test("should show public supply of 700", async ({ page }) => {
+    await expect(page.getByText("/ 700")).toBeVisible();
+  });
+
+  test("should show distribution breakdown", async ({ page }) => {
+    await expect(page.getByText("700 public mint")).toBeVisible();
+    await expect(page.getByText("300 reserved")).toBeVisible();
   });
 
   test("should display connect wallet prompt when not connected", async ({ page }) => {
@@ -59,7 +64,7 @@ test.describe("Mint Page", () => {
     const plusBtn = panel.locator("button:has-text('+')");
 
     await plusBtn.click();
-    await expect(panel.getByText("0.1000 ETH")).toBeVisible();
+    await expect(panel.getByText("0.081596 ETH")).toBeVisible();
   });
 
   test("should have working quantity decrement", async ({ page }) => {
@@ -70,7 +75,7 @@ test.describe("Mint Page", () => {
     await plusBtn.click(); // 2
     await plusBtn.click(); // 3
     await minusBtn.click(); // 2
-    await expect(panel.getByText("0.1000 ETH")).toBeVisible();
+    await expect(panel.getByText("0.081596 ETH")).toBeVisible();
   });
 
   test("should display header with BONSAI VAULT branding", async ({ page }) => {
@@ -81,6 +86,8 @@ test.describe("Mint Page", () => {
   test("should display vault economics section", async ({ page }) => {
     await expect(page.getByText("Vault Economics")).toBeVisible();
     await expect(page.getByText("Underlying Asset Value")).toBeVisible();
+    await expect(page.getByText("Public Mint", { exact: true })).toBeVisible();
+    await expect(page.getByText("700 NFTs (70%)")).toBeVisible();
   });
 
   test("should show revenue distribution info", async ({ page }) => {

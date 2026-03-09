@@ -15,7 +15,7 @@ function VaultRow({ id }: { id: number }) {
   const toggle = useSetVaultActive();
 
   if (!info) return null;
-  const [name, , mintPrice, maxSupply, minted, burned, createdAt, active] = info;
+  const [name, , mintPrice, maxSupply, minted, burned, createdAt, active, reservedSupply] = info;
 
   return (
     <div className="rounded-xl border border-vault-border bg-vault-card p-4 space-y-3">
@@ -43,7 +43,7 @@ function VaultRow({ id }: { id: number }) {
         </div>
         <div className="rounded-lg bg-zinc-900 p-2">
           <p className="text-zinc-500">Minted</p>
-          <p className="font-mono text-white">{Number(minted)} / {Number(maxSupply)}</p>
+          <p className="font-mono text-white">{Number(minted)} / {Number(maxSupply) - Number(reservedSupply)}</p>
         </div>
         <div className="rounded-lg bg-zinc-900 p-2">
           <p className="text-zinc-500">Burned</p>
@@ -56,7 +56,7 @@ function VaultRow({ id }: { id: number }) {
       </div>
       {/* Progress */}
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
-        <div className="h-full rounded-full bg-vault-accent" style={{ width: `${(Number(minted) / Number(maxSupply)) * 100}%` }} />
+        <div className="h-full rounded-full bg-vault-accent" style={{ width: `${(Number(minted) / (Number(maxSupply) - Number(reservedSupply))) * 100}%` }} />
       </div>
       <TxStatus hash={toggle.hash} isPending={toggle.isPending} isConfirming={toggle.isConfirming} isSuccess={toggle.isSuccess} error={toggle.error} />
     </div>
@@ -74,12 +74,12 @@ export default function VaultsAdmin() {
   const numBonsai = bonsaiCount ? Number(bonsaiCount) : 0;
 
   const cv = useCreateVault();
-  const [form, setForm] = useState({ name: "", desc: "", price: "0.05", supply: "1000", bonsaiIds: "" });
+  const [form, setForm] = useState({ name: "", desc: "", price: "0.040798", supply: "1000", reserved: "300", bonsaiIds: "" });
 
   const handleCreate = () => {
     if (!form.name || !form.price || !form.bonsaiIds) return;
     const ids = form.bonsaiIds.split(",").map((s) => BigInt(s.trim()));
-    cv.create(form.name, form.desc, parseEther(form.price), BigInt(form.supply), ids);
+    cv.create(form.name, form.desc, parseEther(form.price), BigInt(form.supply), BigInt(form.reserved), ids);
   };
 
   return (
@@ -105,6 +105,7 @@ export default function VaultsAdmin() {
           <input placeholder="Vault Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-lg border border-vault-border bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-vault-accent focus:outline-none" />
           <input placeholder="Mint Price (ETH)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-lg border border-vault-border bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-vault-accent focus:outline-none" />
           <input placeholder="Max Supply" value={form.supply} onChange={(e) => setForm({ ...form, supply: e.target.value })} className="rounded-lg border border-vault-border bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-vault-accent focus:outline-none" />
+          <input placeholder="Reserved Supply" value={form.reserved} onChange={(e) => setForm({ ...form, reserved: e.target.value })} className="rounded-lg border border-vault-border bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-vault-accent focus:outline-none" />
           <input placeholder={`Bonsai IDs (comma-sep, 0-${numBonsai - 1})`} value={form.bonsaiIds} onChange={(e) => setForm({ ...form, bonsaiIds: e.target.value })} className="rounded-lg border border-vault-border bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-vault-accent focus:outline-none" />
           <textarea placeholder="Description" value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} rows={2} className="md:col-span-2 rounded-lg border border-vault-border bg-zinc-900 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-vault-accent focus:outline-none resize-none" />
         </div>

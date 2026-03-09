@@ -10,13 +10,15 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @notice ERC-1155 Vault NFT — each token ID represents a vault of bundled bonsai assets.
  *         Users mint vault NFTs by paying ETH. Redeems are time-locked.
  *         Owner can execute buyback-and-burn to reduce supply.
+ *         Reserved tokens can be minted by owner for locked distribution.
  */
 contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
     struct VaultInfo {
         string name;
         string description;
         uint256 mintPrice;       // wei per NFT
-        uint256 maxSupply;
+        uint256 maxSupply;       // total supply (public + reserved)
+        uint256 reservedSupply;  // reserved for 1-year lock distribution
         uint256 minted;
         uint256 burned;
         uint256 createdAt;
@@ -35,8 +37,9 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
     uint256 public constant LOCK_PERIOD = 365 days;
 
     // Events
-    event VaultCreated(uint256 indexed vaultId, string name, uint256 mintPrice, uint256 maxSupply);
+    event VaultCreated(uint256 indexed vaultId, string name, uint256 mintPrice, uint256 maxSupply, uint256 reservedSupply);
     event Minted(uint256 indexed vaultId, address indexed to, uint256 amount);
+    event OwnerMinted(uint256 indexed vaultId, address indexed to, uint256 amount);
     event Redeemed(uint256 indexed vaultId, address indexed from, uint256 amount, uint256 ethAmount);
     event BuybackBurned(uint256 indexed vaultId, uint256 amount);
     event FundsWithdrawn(address indexed to, uint256 amount);
@@ -50,10 +53,12 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
         string calldata _description,
         uint256 _mintPrice,
         uint256 _maxSupply,
+        uint256 _reservedSupply,
         uint256[] calldata _bonsaiIds
     ) external onlyOwner returns (uint256) {
         require(_mintPrice > 0, "Price must be > 0");
         require(_maxSupply > 0, "Supply must be > 0");
+        require(_reservedSupply <= _maxSupply, "Reserved exceeds max");
         require(_bonsaiIds.length >= 4, "Min 4 bonsai required");
 
         uint256 vaultId = vaultCount;
@@ -62,6 +67,7 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
             description: _description,
             mintPrice: _mintPrice,
             maxSupply: _maxSupply,
+            reservedSupply: _reservedSupply,
             minted: 0,
             burned: 0,
             createdAt: block.timestamp,
@@ -70,7 +76,7 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
         });
         vaultCount++;
 
-        emit VaultCreated(vaultId, _name, _mintPrice, _maxSupply);
+        emit VaultCreated(vaultId, _name, _mintPrice, _maxSupply, _reservedSupply);
         return vaultId;
     }
 
@@ -79,13 +85,13 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
         vaults[_vaultId].active = _active;
     }
 
-    // ─── Mint ───────────────────────────────────────────────────
+    // ─── Public Mint ──────────────────────────────────────────────
 
     function mint(uint256 _vaultId, uint256 _amount) external payable nonReentrant {
         VaultInfo storage v = vaults[_vaultId];
         require(v.active, "Vault not active");
         require(_amount > 0, "Amount must be > 0");
-        require(v.minted + _amount <= v.maxSupply, "Exceeds max supply");
+        require(v.minted + _amount <= v.maxSupply - v.reservedSupply, "Exceeds public supply");
         require(msg.value == v.mintPrice * _amount, "Wrong ETH amount");
 
         if (firstMintAt[_vaultId][msg.sender] == 0) {
@@ -96,6 +102,23 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
         _mint(msg.sender, _vaultId, _amount, "");
 
         emit Minted(_vaultId, msg.sender, _amount);
+    }
+
+    // ─── Owner Mint (Reserved) ────────────────────────────────────
+
+    function ownerMint(uint256 _vaultId, uint256 _amount, address _to) external onlyOwner {
+        VaultInfo storage v = vaults[_vaultId];
+        require(v.minted + _amount <= v.maxSupply, "Exceeds max supply");
+        require(_amount > 0, "Amount must be > 0");
+
+        if (firstMintAt[_vaultId][_to] == 0) {
+            firstMintAt[_vaultId][_to] = block.timestamp;
+        }
+
+        v.minted += _amount;
+        _mint(_to, _vaultId, _amount, "");
+
+        emit OwnerMinted(_vaultId, _to, _amount);
     }
 
     // ─── Redeem ─────────────────────────────────────────────────
@@ -156,11 +179,12 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
             uint256 minted,
             uint256 burned,
             uint256 createdAt,
-            bool active
+            bool active,
+            uint256 reservedSupply
         )
     {
         VaultInfo storage v = vaults[_vaultId];
-        return (v.name, v.description, v.mintPrice, v.maxSupply, v.minted, v.burned, v.createdAt, v.active);
+        return (v.name, v.description, v.mintPrice, v.maxSupply, v.minted, v.burned, v.createdAt, v.active, v.reservedSupply);
     }
 
     function getVaultBonsaiIds(uint256 _vaultId) external view returns (uint256[] memory) {
@@ -170,6 +194,11 @@ contract BonsaiVault is ERC1155, Ownable, ReentrancyGuard {
     function currentSupply(uint256 _vaultId) external view returns (uint256) {
         VaultInfo storage v = vaults[_vaultId];
         return v.minted - v.burned;
+    }
+
+    function publicSupply(uint256 _vaultId) external view returns (uint256) {
+        VaultInfo storage v = vaults[_vaultId];
+        return v.maxSupply - v.reservedSupply;
     }
 
     function isRedeemable(uint256 _vaultId, address _holder) external view returns (bool) {

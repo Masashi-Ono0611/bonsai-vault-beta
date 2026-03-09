@@ -78,8 +78,10 @@ export const VAULT_TOTAL_ETH = VAULT_BONSAI.reduce(
   (sum, b) => sum + b.priceETH,
   0
 );
-export const MINT_PRICE_ETH = 0.05;
+export const MINT_PRICE_ETH = 0.040798;
 export const MAX_SUPPLY = 1000;
+export const PUBLIC_SUPPLY = 700;
+export const RESERVED_SUPPLY = 300;
 
 // Admin wallet allow-list (in addition to on-chain contract owner)
 // Set NEXT_PUBLIC_ADMIN_WALLETS as comma-separated addresses

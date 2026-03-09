@@ -3,14 +3,14 @@
 import Image from "next/image";
 import { type BonsaiAsset } from "@/lib/contracts";
 
-const METHOD_BADGES: Record<string, string> = {
-  "Classic Gallery": "bg-amber-900/50 text-amber-300 border-amber-700",
-  "Exchange Gallery": "bg-emerald-900/50 text-emerald-300 border-emerald-700",
-  "Secondary Market": "bg-blue-900/50 text-blue-300 border-blue-700",
+const METHOD_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+  "Classic Gallery": { bg: "bg-zinc-800/80", text: "text-zinc-300", dot: "bg-amber-400" },
+  "Exchange Gallery": { bg: "bg-zinc-800/80", text: "text-zinc-300", dot: "bg-emerald-400" },
+  "Secondary Market": { bg: "bg-zinc-800/80", text: "text-zinc-300", dot: "bg-blue-400" },
 };
 
 export function BonsaiCard({ bonsai }: { bonsai: BonsaiAsset }) {
-  const badgeClass = METHOD_BADGES[bonsai.valuationMethod] || "";
+  const style = METHOD_STYLES[bonsai.valuationMethod] || { bg: "bg-zinc-800/80", text: "text-zinc-300", dot: "bg-zinc-400" };
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-vault-border bg-vault-card transition-all hover:border-vault-accent/40 hover:shadow-lg hover:shadow-vault-accent/5">
@@ -38,8 +38,9 @@ export function BonsaiCard({ bonsai }: { bonsai: BonsaiAsset }) {
         </div>
         <div className="flex items-center justify-between">
           <span
-            className={`inline-block rounded-full border px-2 py-0.5 text-[10px] ${badgeClass}`}
+            className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}
           >
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${style.dot}`} />
             {bonsai.valuationMethod}
           </span>
           <span className="font-mono text-sm font-semibold text-vault-accent">

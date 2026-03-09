@@ -58,18 +58,18 @@ export default function BuybackAdmin() {
         <div className="relative h-8 w-full overflow-hidden rounded-full bg-zinc-800">
           <div
             className="absolute inset-y-0 left-0 rounded-full bg-vault-accent/30"
-            style={{ width: `${(minted / 1000) * 100}%` }}
+            style={{ width: `${(minted / 700) * 100}%` }}
           />
           <div
             className="absolute inset-y-0 left-0 rounded-full bg-vault-accent"
-            style={{ width: `${(currentSupply / 1000) * 100}%` }}
+            style={{ width: `${(currentSupply / 700) * 100}%` }}
           />
           {burned > 0 && (
             <div
               className="absolute inset-y-0 rounded-full bg-vault-red/50"
               style={{
-                left: `${(currentSupply / 1000) * 100}%`,
-                width: `${(burned / 1000) * 100}%`,
+                left: `${(currentSupply / 700) * 100}%`,
+                width: `${(burned / 700) * 100}%`,
               }}
             />
           )}
@@ -77,7 +77,7 @@ export default function BuybackAdmin() {
         <div className="flex justify-between text-[10px] text-zinc-500">
           <span>Supply: {currentSupply}</span>
           {burned > 0 && <span className="text-vault-red">Burned: {burned}</span>}
-          <span>Max: 1000</span>
+          <span>Public: 700</span>
         </div>
       </div>
 

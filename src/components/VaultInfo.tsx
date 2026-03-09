@@ -1,6 +1,6 @@
 "use client";
 
-import { VAULT_BONSAI, VAULT_TOTAL_ETH, MINT_PRICE_ETH, MAX_SUPPLY } from "@/lib/contracts";
+import { VAULT_BONSAI, VAULT_TOTAL_ETH, PUBLIC_SUPPLY, RESERVED_SUPPLY, MAX_SUPPLY } from "@/lib/contracts";
 
 export function VaultInfo() {
   return (
@@ -13,12 +13,16 @@ export function VaultInfo() {
           <span className="font-mono text-vault-accent">{VAULT_TOTAL_ETH} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-zinc-400">Total Raise (if sold out)</span>
-          <span className="font-mono text-white">{MINT_PRICE_ETH * MAX_SUPPLY} ETH</span>
+          <span className="text-zinc-400">Total Supply</span>
+          <span className="font-mono text-white">{MAX_SUPPLY} NFTs</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-zinc-400">Supply</span>
-          <span className="font-mono text-white">{MAX_SUPPLY} NFTs</span>
+          <span className="text-zinc-400">Public Mint</span>
+          <span className="font-mono text-white">{PUBLIC_SUPPLY} NFTs (70%)</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-zinc-400">Reserved (1yr lock)</span>
+          <span className="font-mono text-zinc-400">{RESERVED_SUPPLY} NFTs (30%)</span>
         </div>
         <div className="flex justify-between">
           <span className="text-zinc-400">Standard</span>

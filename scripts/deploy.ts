@@ -32,7 +32,7 @@ async function main() {
       name: "天平: Ten-Pyo",
       species: "Goyomatsu",
       artist: "Masashi Hirao",
-      imageURI: "https://arweave.net/_U_NNPCZZMRLQBgxqvKTrB-H5WbD6zaXT5nFG0vaQEU",
+      imageURI: "https://nft-cdn.alchemy.com/eth-mainnet/c09cb22ba0779d6a61ac03dca73ef32b",
       method: 1, // ExchangeGallery
       price: ethers.parseEther("1.12"),
     },
@@ -63,16 +63,31 @@ async function main() {
   }
 
   // Create Vault #001
-  const mintPrice = ethers.parseEther("0.05");
+  // Total Raise = Underlying Asset Value = 40.798 ETH
+  // Mint price = 40.798 / 1000 = 0.040798 ETH
+  // 700 public mint + 300 reserved (1-year lock distribution)
+  const mintPrice = ethers.parseEther("0.040798");
+  const maxSupply = 1000;
+  const reservedSupply = 300;
   const tx = await vault.createVault(
     "BONSAI VAULT #001",
     "Art Bonsai Collection — 4 masterpieces by Masashi Hirao bundled into a single vault. Total valuation: 40.798 ETH.",
     mintPrice,
-    1000,
+    maxSupply,
+    reservedSupply,
     [0, 1, 2, 3]
   );
   await tx.wait();
   console.log("Vault #001 created. Mint price:", ethers.formatEther(mintPrice), "ETH");
+  console.log("Public supply: 700, Reserved: 300");
+
+  // Transfer ownership to user wallet
+  const NEW_OWNER = "0x678a2fc326dEE5d986C48Ee75992F784Ab3a561c";
+  const tx1 = await vault.transferOwnership(NEW_OWNER);
+  await tx1.wait();
+  const tx2 = await registry.transferOwnership(NEW_OWNER);
+  await tx2.wait();
+  console.log("Ownership transferred to:", NEW_OWNER);
 
   console.log("\n--- Deployment Summary ---");
   console.log("NEXT_PUBLIC_REGISTRY_ADDRESS=" + registryAddr);

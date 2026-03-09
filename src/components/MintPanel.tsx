@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useMintVault, useVaultInfo, useCurrentSupply, useVaultBalance, useRedeemableAt } from "@/hooks/useVault";
 import { parseEther } from "viem";
-import { MINT_PRICE_ETH, MAX_SUPPLY, VAULT_ADDRESS } from "@/lib/contracts";
+import { MINT_PRICE_ETH, PUBLIC_SUPPLY, RESERVED_SUPPLY, VAULT_ADDRESS } from "@/lib/contracts";
 
 const BASESCAN_TX = "https://sepolia.basescan.org/tx/";
 
@@ -19,8 +19,8 @@ export function MintPanel() {
   const { mint, hash, isPending, isConfirming, isSuccess, error } = useMintVault();
 
   const minted = vaultInfo ? Number(vaultInfo[4]) : 0;
-  const remaining = MAX_SUPPLY - minted;
-  const totalCost = (MINT_PRICE_ETH * amount).toFixed(4);
+  const remaining = PUBLIC_SUPPLY - minted;
+  const totalCost = (MINT_PRICE_ETH * amount).toFixed(6);
   const holderBalance = balance ? Number(balance) : 0;
 
   const isContractDeployed = VAULT_ADDRESS !== "0x0000000000000000000000000000000000000000";
@@ -55,9 +55,9 @@ export function MintPanel() {
         <div className="rounded-lg bg-zinc-900 p-3 text-center">
           <p className="text-xs text-zinc-500">Remaining</p>
           <p className="font-mono text-lg font-bold text-white">
-            {isContractDeployed ? remaining : MAX_SUPPLY}
+            {isContractDeployed ? Math.max(0, remaining) : PUBLIC_SUPPLY}
           </p>
-          <p className="text-[10px] text-zinc-500">/ {MAX_SUPPLY}</p>
+          <p className="text-[10px] text-zinc-500">/ {PUBLIC_SUPPLY}</p>
         </div>
         <div className="rounded-lg bg-zinc-900 p-3 text-center">
           <p className="text-xs text-zinc-500">Vault Value</p>
@@ -70,14 +70,17 @@ export function MintPanel() {
       <div>
         <div className="mb-1 flex justify-between text-xs text-zinc-500">
           <span>{minted} minted</span>
-          <span>{((minted / MAX_SUPPLY) * 100).toFixed(1)}%</span>
+          <span>{((minted / PUBLIC_SUPPLY) * 100).toFixed(1)}%</span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
           <div
             className="h-full rounded-full bg-gradient-to-r from-vault-accent-dim to-vault-accent transition-all"
-            style={{ width: `${(minted / MAX_SUPPLY) * 100}%` }}
+            style={{ width: `${Math.min((minted / PUBLIC_SUPPLY) * 100, 100)}%` }}
           />
         </div>
+        <p className="mt-1 text-[10px] text-zinc-600">
+          {PUBLIC_SUPPLY} public mint + {RESERVED_SUPPLY} reserved (1-year lock distribution)
+        </p>
       </div>
 
       {/* Mint Controls */}
@@ -111,7 +114,7 @@ export function MintPanel() {
           </p>
         ) : (
           <button
-            onClick={() => mint(0, amount, vaultInfo ? (vaultInfo[2] as bigint) : parseEther("0.05"))}
+            onClick={() => mint(0, amount, vaultInfo ? (vaultInfo[2] as bigint) : parseEther("0.040798"))}
             disabled={isPending || isConfirming || !isContractDeployed || remaining <= 0}
             className="w-full rounded-xl bg-vault-accent py-3 text-base font-bold text-vault-bg transition-all hover:bg-vault-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
           >

@@ -11,8 +11,10 @@ describe("BonsaiVault", function () {
   let user1: HardhatEthersSigner;
   let user2: HardhatEthersSigner;
 
-  const MINT_PRICE = ethers.parseEther("0.05");
+  const MINT_PRICE = ethers.parseEther("0.040798");
   const MAX_SUPPLY = 1000n;
+  const RESERVED_SUPPLY = 300n;
+  const PUBLIC_SUPPLY = MAX_SUPPLY - RESERVED_SUPPLY; // 700
 
   async function deployAndSeed() {
     [owner, user1, user2] = await ethers.getSigners();
@@ -29,12 +31,13 @@ describe("BonsaiVault", function () {
     await registry.registerBonsai("螺旋", "Goyomatsu", "Masashi Hirao", "https://arweave.net/img3", 2, ethers.parseEther("5.678"));
     await registry.registerBonsai("曲", "Unknown", "Masashi Hirao", "https://snft.jp/img4", 0, ethers.parseEther("20"));
 
-    // Create vault with 4 bonsai
+    // Create vault with 4 bonsai (1000 total, 300 reserved)
     await vault.createVault(
       "BONSAI VAULT #001",
       "Art Bonsai Collection featuring 4 masterpieces",
       MINT_PRICE,
       MAX_SUPPLY,
+      RESERVED_SUPPLY,
       [0, 1, 2, 3]
     );
 
@@ -62,6 +65,7 @@ describe("BonsaiVault", function () {
       expect(info.name).to.equal("BONSAI VAULT #001");
       expect(info.mintPrice).to.equal(MINT_PRICE);
       expect(info.maxSupply).to.equal(MAX_SUPPLY);
+      expect(info.reservedSupply).to.equal(RESERVED_SUPPLY);
       expect(info.minted).to.equal(0);
       expect(info.active).to.equal(true);
     });
@@ -75,26 +79,36 @@ describe("BonsaiVault", function () {
       expect(await vault.vaultCount()).to.equal(1);
     });
 
+    it("should return correct public supply", async function () {
+      expect(await vault.publicSupply(0)).to.equal(PUBLIC_SUPPLY);
+    });
+
     it("should reject vault with fewer than 4 bonsai", async function () {
       await expect(
-        vault.createVault("Bad Vault", "desc", MINT_PRICE, MAX_SUPPLY, [0, 1, 2])
+        vault.createVault("Bad Vault", "desc", MINT_PRICE, MAX_SUPPLY, 0n, [0, 1, 2])
       ).to.be.revertedWith("Min 4 bonsai required");
     });
 
     it("should reject vault with 0 price", async function () {
       await expect(
-        vault.createVault("Bad", "desc", 0, MAX_SUPPLY, [0, 1, 2, 3])
+        vault.createVault("Bad", "desc", 0, MAX_SUPPLY, 0n, [0, 1, 2, 3])
       ).to.be.revertedWith("Price must be > 0");
+    });
+
+    it("should reject reserved exceeding max supply", async function () {
+      await expect(
+        vault.createVault("Bad", "desc", MINT_PRICE, 100n, 200n, [0, 1, 2, 3])
+      ).to.be.revertedWith("Reserved exceeds max");
     });
 
     it("should reject non-owner creating vault", async function () {
       await expect(
-        vault.connect(user1).createVault("Hack", "desc", MINT_PRICE, MAX_SUPPLY, [0, 1, 2, 3])
+        vault.connect(user1).createVault("Hack", "desc", MINT_PRICE, MAX_SUPPLY, 0n, [0, 1, 2, 3])
       ).to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");
     });
   });
 
-  describe("Minting", function () {
+  describe("Public Minting", function () {
     beforeEach(deployAndSeed);
 
     it("should mint NFTs with correct ETH payment", async function () {
@@ -131,10 +145,10 @@ describe("BonsaiVault", function () {
       ).to.be.revertedWith("Wrong ETH amount");
     });
 
-    it("should reject mint exceeding max supply", async function () {
+    it("should reject mint exceeding public supply (700)", async function () {
       await expect(
-        vault.connect(user1).mint(0, 1001, { value: MINT_PRICE * 1001n })
-      ).to.be.revertedWith("Exceeds max supply");
+        vault.connect(user1).mint(0, 701, { value: MINT_PRICE * 701n })
+      ).to.be.revertedWith("Exceeds public supply");
     });
 
     it("should reject mint on inactive vault", async function () {
@@ -148,6 +162,63 @@ describe("BonsaiVault", function () {
       await expect(vault.connect(user1).mint(0, 3, { value: MINT_PRICE * 3n }))
         .to.emit(vault, "Minted")
         .withArgs(0, user1.address, 3);
+    });
+  });
+
+  describe("Owner Mint (Reserved)", function () {
+    beforeEach(deployAndSeed);
+
+    it("should allow owner to mint reserved tokens", async function () {
+      await vault.ownerMint(0, 50, user2.address);
+      expect(await vault.balanceOf(user2.address, 0)).to.equal(50);
+    });
+
+    it("should update minted count", async function () {
+      await vault.ownerMint(0, 100, user2.address);
+      const info = await vault.getVaultInfo(0);
+      expect(info.minted).to.equal(100);
+    });
+
+    it("should set firstMintAt for recipient", async function () {
+      await vault.ownerMint(0, 1, user2.address);
+      const ts = await vault.firstMintAt(0, user2.address);
+      expect(ts).to.be.greaterThan(0);
+    });
+
+    it("should allow owner to mint up to maxSupply after public mint", async function () {
+      // Public mint 700
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      await vault.connect(user1).mint(0, 100, { value: MINT_PRICE * 100n });
+      // Now 700 minted, owner can mint remaining 300
+      await vault.ownerMint(0, 300, user2.address);
+      const info = await vault.getVaultInfo(0);
+      expect(info.minted).to.equal(1000);
+    });
+
+    it("should reject owner mint exceeding max supply", async function () {
+      await vault.ownerMint(0, 700, user2.address);
+      // Now 700 via ownerMint. Public can't mint since ownerMint ate into public supply.
+      // But ownerMint can still go up to 1000 total
+      await expect(
+        vault.ownerMint(0, 301, user2.address)
+      ).to.be.revertedWith("Exceeds max supply");
+    });
+
+    it("should reject non-owner calling ownerMint", async function () {
+      await expect(
+        vault.connect(user1).ownerMint(0, 1, user1.address)
+      ).to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");
+    });
+
+    it("should emit OwnerMinted event", async function () {
+      await expect(vault.ownerMint(0, 10, user2.address))
+        .to.emit(vault, "OwnerMinted")
+        .withArgs(0, user2.address, 10);
     });
   });
 
@@ -234,6 +305,10 @@ describe("BonsaiVault", function () {
 
     it("should return correct current supply", async function () {
       expect(await vault.currentSupply(0)).to.equal(10);
+    });
+
+    it("should return correct public supply", async function () {
+      expect(await vault.publicSupply(0)).to.equal(700);
     });
 
     it("should return isRedeemable = false before lock", async function () {

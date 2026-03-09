@@ -102,14 +102,14 @@ export function useCreateVault() {
 
   const create = (
     name: string, description: string,
-    mintPrice: bigint, maxSupply: bigint, bonsaiIds: bigint[]
+    mintPrice: bigint, maxSupply: bigint, reservedSupply: bigint, bonsaiIds: bigint[]
   ) => {
     writeContract({
       chainId: baseSepolia.id,
       address: VAULT_ADDRESS,
       abi: BonsaiVaultABI,
       functionName: "createVault",
-      args: [name, description, mintPrice, maxSupply, bonsaiIds],
+      args: [name, description, mintPrice, maxSupply, reservedSupply, bonsaiIds],
     });
   };
 

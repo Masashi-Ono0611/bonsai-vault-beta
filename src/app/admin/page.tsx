@@ -4,7 +4,7 @@ import { formatEther } from "viem";
 import { useVaultInfo, useCurrentSupply } from "@/hooks/useVault";
 import { useContractBalance, useBonsaiCount, useWithdrawFunds } from "@/hooks/useAdmin";
 import { TxStatus } from "@/components/admin/TxStatus";
-import { MAX_SUPPLY, VAULT_ADDRESS, REGISTRY_ADDRESS } from "@/lib/contracts";
+import { PUBLIC_SUPPLY, MAX_SUPPLY, VAULT_ADDRESS, REGISTRY_ADDRESS } from "@/lib/contracts";
 import { useState } from "react";
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard label="Minted" value={`${minted}`} sub={`/ ${MAX_SUPPLY}`} />
+        <StatCard label="Minted" value={`${minted}`} sub={`/ ${PUBLIC_SUPPLY} public`} />
         <StatCard label="Burned" value={`${burned}`} />
         <StatCard label="Current Supply" value={supply ? supply.toString() : "0"} />
         <StatCard label="Bonsai Registered" value={bonsaiCount ? bonsaiCount.toString() : "0"} />
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <StatCard label="Mint Revenue" value={`${Number(mintRevenue).toFixed(4)}`} sub="ETH (total)" />
         <StatCard label="Contract Balance" value={`${Number(contractEth).toFixed(4)}`} sub="ETH" />
-        <StatCard label="Mint Progress" value={`${((minted / MAX_SUPPLY) * 100).toFixed(1)}%`} />
+        <StatCard label="Mint Progress" value={`${((minted / PUBLIC_SUPPLY) * 100).toFixed(1)}%`} />
       </div>
 
       {/* Contract Addresses */}
