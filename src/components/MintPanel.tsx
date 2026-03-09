@@ -143,11 +143,12 @@ export function MintPanel() {
             <p className="text-xs font-semibold text-vault-red">
               {error.message.includes("User rejected") || error.message.includes("User denied")
                 ? "Transaction rejected by user"
-                : error.message.includes("insufficient funds")
-                ? "Insufficient Base Sepolia ETH"
-                : error.message.includes("exceeds the balance")
+                : error.message.includes("insufficient funds") || error.message.includes("exceeds the balance")
                 ? "Insufficient Base Sepolia ETH"
                 : "Transaction failed"}
+            </p>
+            <p className="text-[10px] text-zinc-600 break-all">
+              {error.message.length > 200 ? error.message.slice(0, 200) + "…" : error.message}
             </p>
             {!error.message.includes("User rejected") && !error.message.includes("User denied") && (
               <p className="text-[10px] text-zinc-500">
