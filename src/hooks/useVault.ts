@@ -1,0 +1,71 @@
+"use client";
+
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther } from "viem";
+import { BonsaiVaultABI } from "@/lib/abi";
+import { VAULT_ADDRESS } from "@/lib/contracts";
+
+export function useVaultInfo(vaultId: number) {
+  return useReadContract({
+    address: VAULT_ADDRESS,
+    abi: BonsaiVaultABI,
+    functionName: "getVaultInfo",
+    args: [BigInt(vaultId)],
+  });
+}
+
+export function useCurrentSupply(vaultId: number) {
+  return useReadContract({
+    address: VAULT_ADDRESS,
+    abi: BonsaiVaultABI,
+    functionName: "currentSupply",
+    args: [BigInt(vaultId)],
+  });
+}
+
+export function useVaultBalance(vaultId: number, address: `0x${string}` | undefined) {
+  return useReadContract({
+    address: VAULT_ADDRESS,
+    abi: BonsaiVaultABI,
+    functionName: "balanceOf",
+    args: address ? [address, BigInt(vaultId)] : undefined,
+    query: { enabled: !!address },
+  });
+}
+
+export function useIsRedeemable(vaultId: number, address: `0x${string}` | undefined) {
+  return useReadContract({
+    address: VAULT_ADDRESS,
+    abi: BonsaiVaultABI,
+    functionName: "isRedeemable",
+    args: address ? [BigInt(vaultId), address] : undefined,
+    query: { enabled: !!address },
+  });
+}
+
+export function useRedeemableAt(vaultId: number, address: `0x${string}` | undefined) {
+  return useReadContract({
+    address: VAULT_ADDRESS,
+    abi: BonsaiVaultABI,
+    functionName: "redeemableAt",
+    args: address ? [BigInt(vaultId), address] : undefined,
+    query: { enabled: !!address },
+  });
+}
+
+export function useMintVault() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const mint = (vaultId: number, amount: number, pricePerUnit: number) => {
+    writeContract({
+      address: VAULT_ADDRESS,
+      abi: BonsaiVaultABI,
+      functionName: "mint",
+      args: [BigInt(vaultId), BigInt(amount)],
+      value: parseEther((pricePerUnit * amount).toFixed(18)),
+    });
+  };
+
+  return { mint, hash, isPending, isConfirming, isSuccess, error };
+}
