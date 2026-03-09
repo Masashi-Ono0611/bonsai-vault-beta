@@ -43,7 +43,7 @@ export const VAULT_BONSAI: BonsaiAsset[] = [
     species: "Goyomatsu (Five-needle Pine)",
     artist: "Masashi Hirao",
     imageURI:
-      "https://arweave.net/_U_NNPCZZMRLQBgxqvKTrB-H5WbD6zaXT5nFG0vaQEU",
+      "https://nft-cdn.alchemy.com/eth-mainnet/c09cb22ba0779d6a61ac03dca73ef32b",
     valuationMethod: "Exchange Gallery",
     valuationDetail: "FARM 120 × ¥3,000",
     priceETH: 1.12,
