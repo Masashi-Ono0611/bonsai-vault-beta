@@ -80,3 +80,11 @@ export const VAULT_TOTAL_ETH = VAULT_BONSAI.reduce(
 );
 export const MINT_PRICE_ETH = 0.05;
 export const MAX_SUPPLY = 1000;
+
+// Admin wallet allow-list (in addition to on-chain contract owner)
+// Set NEXT_PUBLIC_ADMIN_WALLETS as comma-separated addresses
+const envAdmins = process.env.NEXT_PUBLIC_ADMIN_WALLETS || "";
+export const ADMIN_WALLETS: string[] = envAdmins
+  .split(",")
+  .map((a) => a.trim().toLowerCase())
+  .filter(Boolean);

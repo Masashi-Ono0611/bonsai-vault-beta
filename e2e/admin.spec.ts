@@ -15,7 +15,7 @@ test.describe("Admin Pages", () => {
         const guard = page.locator("[data-testid='admin-guard-connect']");
         await expect(guard).toBeVisible({ timeout: 15000 });
         await expect(guard.getByText("Connect Wallet")).toBeVisible();
-        await expect(guard.getByText("Connect the owner wallet")).toBeVisible();
+        await expect(guard.getByText("Connect an authorized wallet")).toBeVisible();
       });
     }
 
