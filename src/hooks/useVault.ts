@@ -1,6 +1,7 @@
 "use client";
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 import { BonsaiVaultABI } from "@/lib/abi";
 import { VAULT_ADDRESS } from "@/lib/contracts";
 
@@ -57,12 +58,15 @@ export function useMintVault() {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const mint = (vaultId: number, amount: number, mintPriceWei: bigint) => {
+    const value = mintPriceWei * BigInt(amount);
     writeContract({
+      chainId: baseSepolia.id,
       address: VAULT_ADDRESS,
       abi: BonsaiVaultABI,
       functionName: "mint",
       args: [BigInt(vaultId), BigInt(amount)],
-      value: mintPriceWei * BigInt(amount),
+      value,
+      gas: 200_000n,
     });
   };
 
