@@ -138,12 +138,29 @@ export function MintPanel() {
         )}
 
         {error && (
-          <div className="rounded-lg border border-vault-red/30 bg-vault-red/10 p-3">
-            <p className="text-xs text-vault-red">
-              {error.message.includes("User rejected")
-                ? "Transaction rejected"
+          <div className="rounded-lg border border-vault-red/30 bg-vault-red/10 p-3 space-y-1">
+            <p className="text-xs font-semibold text-vault-red">
+              {error.message.includes("User rejected") || error.message.includes("User denied")
+                ? "Transaction rejected by user"
+                : error.message.includes("insufficient funds")
+                ? "Insufficient Base Sepolia ETH"
+                : error.message.includes("exceeds the balance")
+                ? "Insufficient Base Sepolia ETH"
                 : "Transaction failed"}
             </p>
+            {!error.message.includes("User rejected") && !error.message.includes("User denied") && (
+              <p className="text-[10px] text-zinc-500">
+                You need Base Sepolia testnet ETH to mint.{" "}
+                <a
+                  href="https://www.alchemy.com/faucets/base-sepolia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-vault-accent underline"
+                >
+                  Get free ETH from faucet →
+                </a>
+              </p>
+            )}
           </div>
         )}
       </div>
